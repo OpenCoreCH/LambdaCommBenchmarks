@@ -11,6 +11,7 @@
 #include <aws/s3/model/PutObjectRequest.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/lambda-runtime/runtime.h>
+#include <boost/interprocess/streams/bufferstream.hpp>
 #include <vector>
 #include <random>
 #include <chrono>
@@ -19,7 +20,6 @@
 
 
 using namespace aws::lambda_runtime;
-using random_bytes_engine = std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
 char const TAG[] = "LAMBDA_ALLOC";
 
 uint64_t upload_random_file(Aws::S3::S3Client const &client,
@@ -40,7 +40,6 @@ uint64_t timeSinceEpochMillisec()
 
 static invocation_response my_handler(invocation_request const &req, Aws::S3::S3Client const &client)
 {
-    std::cout << "Invoked handler" << std::endl;
     using namespace Aws::Utils::Json;
     JsonValue json(req.payload);
     if (!json.WasParseSuccessful())
@@ -54,6 +53,7 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     auto key = v.GetString("s3key");
     auto role = v.GetString("role"); // producer or consumer
     auto file_size = v.GetInteger("fileSize");
+    std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
 
     std::string res_json = "{ \"fileSize\": " + std::to_string(file_size) + ", \"role\": \"" + role + "\"" ;
     if (role == "producer")
@@ -75,7 +75,7 @@ std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetCon
     return []
     {
         return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
-            "console_logger", Aws::Utils::Logging::LogLevel::Trace);
+            "console_logger", Aws::Utils::Logging::LogLevel::Info);
     };
 }
 
@@ -83,13 +83,12 @@ int main()
 {
     using namespace Aws;
     SDKOptions options;
-    options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Trace;
+    options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Info;
     options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
     InitAPI(options);
     {
         Client::ClientConfiguration config;
-        config.region = Aws::Environment::GetEnv("AWS_REGION");
-        config.caFile = "/etc/pki/tls/certs/ca-bundle.crt";
+        config.region = "eu-central-1";
 
         auto credentialsProvider = Aws::MakeShared<Aws::Auth::EnvironmentAWSCredentialsProvider>(TAG);
         S3::S3Client client(credentialsProvider, config);
@@ -138,18 +137,30 @@ uint64_t upload_random_file(Aws::S3::S3Client const &client,
                         Aws::String const &key,
                         int size)
 {
-    random_bytes_engine rbe;
-    std::vector<char> data(size);
-    std::generate(begin(data), end(data), std::ref(rbe));
+    /**
+     * We allocate and do not initialize memory on purpose to get "random" data.
+     * Explicitly generating random data in a 256MB Lambda Function and passing it to a stringstream 
+     * (i.e. the way that is documented here: https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/examples-s3-objects.html)
+     * takes way too long, ~55s for 100MB
+     */
+    char* pBuf = new char[size];
+
+    /**
+     * We use Boost's bufferstream to wrap the array as an IOStream. Usign a light-weight streambuf wrapper, as many solutions 
+     * (e.g. https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory) on the internet
+     * suggest does not work because the S3 SDK relies on proper functioning tellp(), etc... (for instance to get the body length).
+     */
+    const std::shared_ptr<Aws::IOStream> input_data = std::make_shared<boost::interprocess::bufferstream>(pBuf, size);
 
     Aws::S3::Model::PutObjectRequest request;
     request.WithBucket(bucket).WithKey(key);
-    std::string s(data.begin(), data.end());
-    const std::shared_ptr<Aws::IOStream> input_data =
-        Aws::MakeShared<Aws::StringStream>("");
-    *input_data << s.c_str();
     request.SetBody(input_data);
     uint64_t bef_upload = timeSinceEpochMillisec();
     Aws::S3::Model::PutObjectOutcome outcome = client.PutObject(request);
+    if (!outcome.IsSuccess()) {
+        std::cout << "Error: PutObject: " << 
+            outcome.GetError().GetMessage() << std::endl;
+    }
+    delete[] pBuf;
     return bef_upload;
 }
