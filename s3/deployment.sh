@@ -11,6 +11,7 @@ aws lambda create-function \
 --handler s3benchmark \
 --zip-file fileb://s3benchmark.zip
 
+make aws-lambda-package-s3benchmark
+
 aws lambda update-function-code --function-name s3benchmark --zip-file fileb://s3benchmark.zip
 
-aws lambda invoke --function-name s3benchmark --cli-binary-format raw-in-base64-out --payload '{"s3bucket": "romanboe-test", "s3key":"test", "role": "producer", "fileSize": 100 }'

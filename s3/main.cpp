@@ -9,6 +9,7 @@
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/PutObjectRequest.h>
+#include <aws/s3/model/GetObjectRequest.h>
 #include <aws/lambda-runtime/runtime.h>
 #include <vector>
 #include <random>
@@ -26,6 +27,9 @@ uint64_t upload_random_file(Aws::S3::S3Client const &client,
                         Aws::String const &key,
                         int size);
 
+uint64_t download_file(Aws::S3::S3Client const &client,
+                        Aws::String const &bucket,
+                        Aws::String const &key);
 
 uint64_t timeSinceEpochMillisec()
 {
@@ -59,7 +63,7 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     }
     else if (role == "consumer")
     {
-        uint64_t finished_time;
+        uint64_t finished_time = download_file(client, bucket, key);
         res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
     }
     
@@ -99,18 +103,46 @@ int main()
     return 0;
 }
 
+uint64_t download_file(Aws::S3::S3Client const &client,
+                        Aws::String const &bucket,
+                        Aws::String const &key)
+{
+    
+
+    Aws::S3::Model::GetObjectRequest request;
+    request.WithBucket(bucket).WithKey(key);
+
+    int retries = 0;
+    const int MAX_RETRIES = 100;
+    while (retries < MAX_RETRIES) {
+        auto outcome = client.GetObject(request);
+        if (outcome.IsSuccess()) {
+            auto& s = outcome.GetResult().GetBody();
+            uint64_t finishedTime = timeSinceEpochMillisec();
+            // Perform NOP on result to prevent optimizations
+            std::stringstream ss;
+            ss << s.rdbuf();
+            std::string first(" ");
+            ss.get(&first[0], 1);
+            return finishedTime;
+        } else {
+            retries += 1;
+        }
+    }
+    return 0;
+
+}
+
 uint64_t upload_random_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
                         Aws::String const &key,
                         int size)
 {
-    using namespace Aws;
     random_bytes_engine rbe;
     std::vector<char> data(size);
     std::generate(begin(data), end(data), std::ref(rbe));
-    std::cout << "Generated random data" << std::endl;
 
-    S3::Model::PutObjectRequest request;
+    Aws::S3::Model::PutObjectRequest request;
     request.WithBucket(bucket).WithKey(key);
     std::string s(data.begin(), data.end());
     const std::shared_ptr<Aws::IOStream> input_data =
@@ -118,6 +150,6 @@ uint64_t upload_random_file(Aws::S3::S3Client const &client,
     *input_data << s.c_str();
     request.SetBody(input_data);
     uint64_t bef_upload = timeSinceEpochMillisec();
-    S3::Model::PutObjectOutcome outcome = client.PutObject(request);
+    Aws::S3::Model::PutObjectOutcome outcome = client.PutObject(request);
     return bef_upload;
 }
