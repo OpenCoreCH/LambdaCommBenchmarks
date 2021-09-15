@@ -21,10 +21,17 @@ using namespace aws::lambda_runtime;
 using random_bytes_engine = std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char>;
 char const TAG[] = "LAMBDA_ALLOC";
 
-void upload_random_file(Aws::S3::S3Client const &client,
+uint64_t upload_random_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
                         Aws::String const &key,
                         int size);
+
+
+uint64_t timeSinceEpochMillisec()
+{
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
 
 
 static invocation_response my_handler(invocation_request const &req, Aws::S3::S3Client const &client)
@@ -44,14 +51,19 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     auto role = v.GetString("role"); // producer or consumer
     auto file_size = v.GetInteger("fileSize");
 
+    std::string res_json = "{ \"fileSize\": " + std::to_string(file_size) + ", \"role\": \"" + role + "\"" ;
     if (role == "producer")
     {
-        upload_random_file(client, bucket, key, file_size);
+        uint64_t upload_time = upload_random_file(client, bucket, key, file_size);
+        res_json += ", \"uploadTime\": " + std::to_string(upload_time) + " }";
     }
     else if (role == "consumer")
     {
+        uint64_t finished_time;
+        res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
     }
-    return invocation_response::success("finished", "text/plain");
+    
+    return invocation_response::success(res_json, "application/json");
 }
 
 std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory()
@@ -87,7 +99,7 @@ int main()
     return 0;
 }
 
-void upload_random_file(Aws::S3::S3Client const &client,
+uint64_t upload_random_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
                         Aws::String const &key,
                         int size)
@@ -105,5 +117,7 @@ void upload_random_file(Aws::S3::S3Client const &client,
         Aws::MakeShared<Aws::StringStream>("");
     *input_data << s.c_str();
     request.SetBody(input_data);
+    uint64_t bef_upload = timeSinceEpochMillisec();
     S3::Model::PutObjectOutcome outcome = client.PutObject(request);
+    return bef_upload;
 }
