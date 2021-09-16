@@ -112,7 +112,7 @@ uint64_t download_file(Aws::S3::S3Client const &client,
     request.WithBucket(bucket).WithKey(key);
 
     int retries = 0;
-    const int MAX_RETRIES = 100;
+    const int MAX_RETRIES = 500;
     while (retries < MAX_RETRIES) {
         auto outcome = client.GetObject(request);
         if (outcome.IsSuccess()) {
