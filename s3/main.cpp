@@ -15,6 +15,7 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <thread>
 #include <cstdint>
 #include <iostream>
 
@@ -126,6 +127,11 @@ uint64_t download_file(Aws::S3::S3Client const &client,
             return finishedTime;
         } else {
             retries += 1;
+            int sleep_time = retries;
+            if (retries > 100) {
+                sleep_time = retries * 2;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
         }
     }
     return 0;
