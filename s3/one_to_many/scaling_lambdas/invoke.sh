@@ -7,14 +7,19 @@ consumers=(1 2 4 8 16 32 64 128 256)
 
 for consumer in "${consumers[@]}"
     do
+    mkdir -p "out/$consumer"
     for run in {1..10}
         do
             timestamp=$(date +%s)
-            aws lambda invoke --function-name s3benchmark --cli-binary-format raw-in-base64-out --payload '{"s3bucket": "romanboe-test", "s3key":"'"$timestamp"'", "role": "producer", "fileSize": '"$filesize"' }' "out/producer_${filesize}_${run}.json" &
+            aws lambda invoke --function-name s3benchmark --cli-binary-format raw-in-base64-out --payload '{"s3bucket": "romanboe-test", "s3key":"'"$timestamp"'", "role": "producer", "fileSize": '"$filesize"' }' "out/$consumer/producer_${filesize}_${run}.json" &
             for consumernum in $(seq 1 $consumer);
                 do
-                aws lambda invoke --function-name s3benchmark --cli-binary-format raw-in-base64-out --payload '{"s3bucket": "romanboe-test", "s3key":"'"$timestamp"'", "role": "consumer", "fileSize": '"$filesize"' }' "out/consumer_${filesize}_${run}_${consumernum}.json" &
+                aws lambda invoke --function-name s3benchmark --cli-binary-format raw-in-base64-out --payload '{"s3bucket": "romanboe-test", "s3key":"'"$timestamp"'", "role": "consumer", "fileSize": '"$filesize"' }' "out/$consumer/consumer_${filesize}_${run}_${consumernum}.json" &
                 done
-            sleep 10
+            if [ "$consumer" -gt "100" ]; then
+                sleep 50
+            else
+                sleep 10
+            fi
         done
     done
