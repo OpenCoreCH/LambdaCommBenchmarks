@@ -70,6 +70,7 @@ static invocation_response my_handler(invocation_request const &req)
         res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
     }
     
+    redisFree(c);
     return invocation_response::success(res_json, "application/json");
 }
 
@@ -104,7 +105,7 @@ uint64_t download_file(redisContext* context,
                        std::string const &key)
 {
     int retries = 0;
-    const int MAX_RETRIES = 500;
+    const int MAX_RETRIES = 50000;
     while (retries < MAX_RETRIES) {
         std::string comm = "GET " + key;
         redisReply* reply = (redisReply*) redisCommand(context, comm.c_str());
@@ -134,6 +135,7 @@ uint64_t upload_random_file(redisContext* context,
     uint64_t bef_upload = timeSinceEpochMillisec();
     std::string comm = "SET " + key + " %b";
     redisReply* reply = (redisReply*) redisCommand(context, comm.c_str(), pBuf, size);
+    freeReplyObject(reply);
     delete[] pBuf;
     return bef_upload;
 }
