@@ -46,6 +46,13 @@ static invocation_response my_handler(invocation_request const &req)
     auto redis_port = v.GetInteger("port");
     auto role = v.GetString("role"); // producer or consumer
     auto file_size = v.GetInteger("fileSize");
+    if (v.KeyExists("waitUntil")) {
+        auto wait_until = v.GetInteger("waitUntil");
+        while (std::time(0) < wait_until) {
+            
+        }
+
+    }
     std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
     redisContext *c = redisConnect(redis_hostname.c_str(), redis_port);
     if (c == NULL || c->err) {
