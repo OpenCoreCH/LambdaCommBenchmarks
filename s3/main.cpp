@@ -54,6 +54,13 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     auto key = v.GetString("s3key");
     auto role = v.GetString("role"); // producer or consumer
     auto file_size = v.GetInteger("fileSize");
+    if (v.KeyExists("waitUntil")) {
+        auto wait_until = v.GetInteger("waitUntil");
+        while (std::time(0) < wait_until) {
+            
+        }
+
+    }
     std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
 
     std::string res_json = "{ \"fileSize\": " + std::to_string(file_size) + ", \"role\": \"" + role + "\"" ;
