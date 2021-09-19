@@ -6,11 +6,12 @@ REDIS_PORT=6379
 filesizes=(1 1000 10000 100000 1000000 10000000 500000000)
 filesize=10000000
 consumers=(1 2 4 8 16 32 64 128 256)
+consumers=(256)
 
 for consumer in "${consumers[@]}"
     do
     mkdir -p "out/$consumer"
-    for run in {1..10}
+    for run in {10..10}
         do
             timestamp=$(date +%s)
             wait_until=$((timestamp + 10))
