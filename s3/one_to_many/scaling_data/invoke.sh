@@ -1,7 +1,7 @@
 #!/bin/bash
 mkdir -p out/
 
-filesizes=(1 1000 10000 100000 1000000 10000000 100000000 1000000000)
+filesizes=(1 1000 10000 100000 1000000 10000000 100000000 500000000)
 consumer=8
 
 for filesize in "${filesizes[@]}"

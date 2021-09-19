@@ -4,7 +4,7 @@ aws iam attach-role-policy --role-name lambda-vpc-role --policy-arn arn:aws:iam:
 aws iam attach-role-policy --role-name lambda-vpc-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 
 # Creating ElastiCache Cluster (group -> default VPC security group)
-aws elasticache create-cache-cluster --cache-cluster-id ClusterForLambda --cache-node-type cache.t3.micro --engine redis --num-cache-nodes 1 --security-group-ids sg-06df67e1deee61365
+aws elasticache create-cache-cluster --cache-cluster-id ClusterForLambda --cache-node-type cache.t3.small --engine redis --num-cache-nodes 1 --security-group-ids sg-06df67e1deee61365
 
 # To query the endpoint (in CacheNodes -> Endpoint):
 aws elasticache describe-cache-clusters --show-cache-node-info
