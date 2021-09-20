@@ -9,12 +9,17 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/CPPNatHolePunching/client/)
 
 add_executable(${PROJECT_NAME} "main.cpp")
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/lib/CPPNatHolePunching/client/)
+target_include_directories(${PROJECT_NAME} PUBLIC
+                           ${PROJECT_SOURCE_DIR}/lib/CPPNatHolePunching/client/
+                           ${PROJECT_SOURCE_DIR}/lib/udt4/src/)
 
+target_link_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/lib/udt4/src/)
+                           
 target_link_libraries(${PROJECT_NAME} PUBLIC
                     AWS::aws-lambda-runtime
                     ${AWSSDK_LINK_LIBRARIES}
                     ${HIREDIS_LIBRARIES}
-                    hole_punching_client)
+                    hole_punching_client
+                    udt)
 
 aws_lambda_package_target(${PROJECT_NAME})

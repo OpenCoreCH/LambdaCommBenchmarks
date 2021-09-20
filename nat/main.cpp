@@ -11,17 +11,17 @@
 #include <cstdint>
 #include <iostream>
 #include <hole_punching_client.h>
+#include <udt.h>
 
-using boost::asio::ip::udp;
 using namespace aws::lambda_runtime;
 char const TAG[] = "LAMBDA_ALLOC";
 
-uint64_t send_file(udp::socket& socket,
-                   udp::endpoint peer,
+uint64_t send_file(int sock_fd,
+                   const struct sockaddr_in &peeraddr,
                    int size);
 
-uint64_t get_file(udp::socket&socket,
-                  udp::endpoint peer);
+uint64_t get_file(int sock_fd,
+                  const struct sockaddr_in &peeraddr);
 
 uint64_t timeSinceEpochMillisec()
 {
@@ -54,22 +54,27 @@ static invocation_response my_handler(invocation_request const &req)
     }
     std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
 
-    boost::asio::io_service io_service;
-    udp::socket socket(io_service);
-    boost::system::error_code err;
-    udp::endpoint peer = pair(socket, pairing_key, server_ip);
+    struct sockaddr_in peeraddr;
+    int socket_fd = pair(peeraddr, pairing_key, server_ip);
+    sockaddr_in name4;
+    sockaddr_in6 name6;
+    sockaddr* name;
+    socklen_t namelen;
+    namelen = sizeof(sockaddr_in);
+    name = (sockaddr*)&name4;
+        
 
     std::string res_json = "{ \"fileSize\": " + std::to_string(file_size) + ", \"role\": \"" + role + "\"" ;
     if (role == "producer")
     {
-        uint64_t upload_time = send_file(socket, peer, file_size);
+        uint64_t upload_time = send_file(socket_fd, peeraddr, file_size);
         res_json += ", \"uploadTime\": " + std::to_string(upload_time) + " }";
     }
     else if (role == "consumer")
     {
-        socket.send_to(boost::asio::buffer("1"), peer, 0, err);
+        //sendto(socket_fd, "1", 1, MSG_CONFIRM, (const struct sockaddr *) &peeraddr, sizeof(peeraddr));
         
-        uint64_t finished_time = get_file(socket, peer);
+        uint64_t finished_time = get_file(socket_fd, peeraddr);
         res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
     }
     
@@ -103,48 +108,65 @@ int main()
     return 0;
 }
 
-uint64_t get_file(udp::socket&socket,
-                  udp::endpoint peer)
+uint64_t get_file(int sock_fd,
+                  const struct sockaddr_in &peeraddr)
 {
-    char recv_buffer[MAX_BUFFER_DATA_SIZE];
-	int n = socket.receive_from(boost::asio::buffer(recv_buffer), peer);
-    std::cout << "Got " << n << " bytes " << std::endl;
-    int size = *((int*) recv_buffer);
-    std::cout << "Total data length " << size << std::endl;
-    int received_size = n - sizeof(int);
-    char* out_buffer = new char[size];
-    memcpy(out_buffer, recv_buffer + sizeof(int), n - sizeof(int));
-    int num_packets = (size + sizeof(int) + MAX_BUFFER_DATA_SIZE - 1) / MAX_BUFFER_DATA_SIZE; // int ceil of (size + sizeof(int))/MAX_BUFFER_DATA_SIZE
-    for (int i = 1; i < num_packets; i++) {
-        int n = socket.receive_from(boost::asio::buffer(recv_buffer), peer);
-        std::cout << "Got " << n << " bytes " << std::endl;
-        memcpy(out_buffer + received_size, recv_buffer, n);
-        received_size += n;
+    char* recv_buffer = new char[1];
+
+    UDT::startup();
+    UDTSOCKET u_sock = UDT::socket(AF_INET, SOCK_STREAM, 0);
+    bool rdv = true;
+    struct addrinfo *u_peer;
+    UDT::setsockopt(u_sock, 0, UDT_RENDEZVOUS, &rdv, sizeof(bool));
+    if (UDT::ERROR == UDT::bind2(u_sock, sock_fd)) {
+        std::cout << "bind2: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
-    
-    uint64_t after = timeSinceEpochMillisec();
-    delete[] out_buffer;
-	
-    return after;
+    if (UDT::ERROR == UDT::connect(u_sock, (const struct sockaddr *) &peeraddr, sizeof(peeraddr))) {
+        std::cout << "connect: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    }
+    std::cout << "Succesfully connected" << std::endl;
+    if (UDT::ERROR == UDT::recv(u_sock, recv_buffer, 1, 0)) {
+        std::cout << "recv: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    }
+
+
+    std::cout << "Value: " << recv_buffer[0] << std::endl;
+    UDT::close(u_sock);
+    UDT::cleanup();
+    return 0;
 }
 
-uint64_t send_file(udp::socket& socket,
-                   udp::endpoint peer,
+uint64_t send_file(int sock_fd,
+                   const struct sockaddr_in &peeraddr,
                    int size)
 {
-    int tot_size = size + sizeof(int);
+    /*int tot_size = size + sizeof(int);
     char* pBuf = new char[tot_size];
-    *((int*) pBuf) = size;
-    int num_packets = (tot_size + MAX_BUFFER_DATA_SIZE - 1) / MAX_BUFFER_DATA_SIZE; // int ceil
-
-    uint64_t bef_upload = timeSinceEpochMillisec();
-    int remaining_size = tot_size;
-    for (int i = 0; i < num_packets; i++) {
-        std::cout << "Sending packet " << i << std::endl;
-        int packet_size = std::min(remaining_size, MAX_BUFFER_DATA_SIZE);
-        socket.send_to(boost::asio::buffer(pBuf + i * MAX_BUFFER_DATA_SIZE, packet_size), peer, 0);
-        remaining_size -= packet_size;
+    *((int*) pBuf) = size;*/
+    // TODO: First send size, then buffer
+    char* pBuf = new char[1]; 
+    pBuf[0] = '5';
+    
+    
+    UDT::startup();
+    UDTSOCKET u_sock = UDT::socket(AF_INET, SOCK_STREAM, 0);
+    bool rdv = true;
+    struct addrinfo *u_peer;
+    UDT::setsockopt(u_sock, 0, UDT_RENDEZVOUS, &rdv, sizeof(bool));
+    if (UDT::ERROR == UDT::bind2(u_sock, sock_fd)) {
+        std::cout << "bind2: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
-    delete[] pBuf;
-    return bef_upload;
+    if (UDT::ERROR == UDT::connect(u_sock, (const struct sockaddr *) &peeraddr, sizeof(peeraddr))) {
+        std::cout << "connect: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    }
+    std::cout << "Succesfully connected" << std::endl;
+    if (UDT::ERROR == UDT::send(u_sock, pBuf, 1, 0)) {
+        std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    }
+    
+    UDT::close(u_sock);
+    UDT::cleanup();
+    
+    
+    return 0;
 }
