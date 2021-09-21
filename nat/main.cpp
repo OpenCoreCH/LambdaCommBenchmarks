@@ -81,6 +81,8 @@ static invocation_response my_handler(invocation_request const &req)
             upload_time = send_file_multiple(socket_fds, peeraddrs, num_consumers, file_size);
         }
         res_json += ", \"uploadTime\": " + std::to_string(upload_time) + " }";
+        delete[] peeraddrs;
+        delete[] socket_fds;
     }
     else if (role == "consumer")
     {
@@ -172,7 +174,6 @@ uint64_t send_file(int sock_fd,
     UDT::startup();
     UDTSOCKET u_sock = UDT::socket(AF_INET, SOCK_STREAM, 0);
     bool rdv = true;
-    struct addrinfo *u_peer;
     UDT::setsockopt(u_sock, 0, UDT_RENDEZVOUS, &rdv, sizeof(bool));
     if (UDT::ERROR == UDT::bind2(u_sock, sock_fd)) {
         std::cout << "bind2: " << UDT::getlasterror().getErrorMessage() << std::endl;
@@ -209,5 +210,66 @@ uint64_t send_file_multiple(int sock_fds[],
                    int num_consumers,
                    int size)
 {
-    return 0;
+    char* pBuf = new char[size];
+    UDT::startup();
+    UDTSOCKET* u_socks = new UDTSOCKET[num_consumers];
+    for (int i = 0; i < num_consumers; i++) {
+        u_socks[i] = UDT::socket(AF_INET, SOCK_STREAM, 0);
+        bool rdv = true;
+        UDT::setsockopt(u_socks[i], 0, UDT_RENDEZVOUS, &rdv, sizeof(bool));
+        if (UDT::ERROR == UDT::bind2(u_socks[i], sock_fds[i])) {
+            std::cout << "bind2: " << UDT::getlasterror().getErrorMessage() << std::endl;
+        }
+        if (UDT::ERROR == UDT::connect(u_socks[i], (const struct sockaddr *) &peeraddr[i], sizeof(peeraddr[i]))) {
+            std::cout << "connect: " << UDT::getlasterror().getErrorMessage() << std::endl;
+        }
+    }
+    std::cout << "Succesfully connected" << std::endl;
+    uint64_t bef_upload = timeSinceEpochMillisec();
+    for (int i = 0; i < num_consumers; i++) {
+
+    }
+    for (int i = 0; i < num_consumers; i++) {
+        if (UDT::ERROR == UDT::send(u_socks[i], (char*) (size_t) &size, sizeof(int), 0)) {
+            std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
+        }
+    }
+
+    int* total_sent_bytes = new int[num_consumers]();
+    int curr_consumer = 0;
+    bool finished = false;
+    while (!finished) {
+        if (total_sent_bytes[curr_consumer] < size) {
+            int sent_bytes = UDT::send(u_socks[curr_consumer], pBuf + total_sent_bytes[curr_consumer], size - total_sent_bytes[curr_consumer], 0);
+            if (sent_bytes == UDT::ERROR) {
+                std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
+            }
+            total_sent_bytes[curr_consumer] += sent_bytes;
+        }
+        curr_consumer = (curr_consumer + 1) % num_consumers;
+        
+        // Check if all done every round
+        if (curr_consumer == 0) {
+            finished = true;
+            for (int i = 0; i < num_consumers; i++) {
+                if (total_sent_bytes[i] < size) {
+                    finished = false;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < num_consumers; i++) {
+        UDT::close(u_socks[i]);
+    }
+    
+    
+    
+
+    UDT::cleanup();
+
+    delete[] pBuf;
+    delete[] u_socks;
+    
+    
+    return bef_upload;
 }
