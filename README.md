@@ -11,6 +11,7 @@
 You need to build the benchmarks on an x86 Linux system.
 
 To create the zip for AWS Lambda:
+
 ```
 mkdir build
 cd build
@@ -18,7 +19,7 @@ cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=Rele
 make aws-lambda-package-<project_name>
 ```
 
-## Deployment
+## Deployment
 All benchmarks contain a `deployment.sh` script with details on how to deploy them and what to start / configure on AWS.
 
 ## Running 
