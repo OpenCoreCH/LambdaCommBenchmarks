@@ -20,6 +20,11 @@ uint64_t send_file(int sock_fd,
                    const struct sockaddr_in &peeraddr,
                    int size);
 
+uint64_t send_file_multiple(int sock_fds[],
+                   struct sockaddr_in peeraddr[],
+                   int num_consumers,
+                   int size);
+
 uint64_t get_file(int sock_fd,
                   const struct sockaddr_in &peeraddr);
 
@@ -52,28 +57,35 @@ static invocation_response my_handler(invocation_request const &req)
         }
 
     }
+    int num_consumers = 1;
+    if (v.KeyExists("numConsumers")) {
+        num_consumers = v.GetInteger("numConsumers");
+    }
     std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
 
-    struct sockaddr_in peeraddr;
-    int socket_fd = pair(peeraddr, pairing_key, server_ip);
-    sockaddr_in name4;
-    sockaddr_in6 name6;
-    sockaddr* name;
-    socklen_t namelen;
-    namelen = sizeof(sockaddr_in);
-    name = (sockaddr*)&name4;
         
 
     std::string res_json = "{ \"fileSize\": " + std::to_string(file_size) + ", \"role\": \"" + role + "\"" ;
     if (role == "producer")
     {
-        uint64_t upload_time = send_file(socket_fd, peeraddr, file_size);
+        struct sockaddr_in* peeraddrs = new struct sockaddr_in[num_consumers];
+        int* socket_fds = new int[num_consumers];
+        for (int i = 0; i < num_consumers; i++) {
+            std::string prod_pairing_key = pairing_key + "_" + std::to_string(i + 1);
+            socket_fds[i] = pair(peeraddrs[i], prod_pairing_key, server_ip);
+        }
+        uint64_t upload_time;
+        if (num_consumers == 1) {
+            upload_time = send_file(socket_fds[0], peeraddrs[0], file_size);
+        } else {
+            upload_time = send_file_multiple(socket_fds, peeraddrs, num_consumers, file_size);
+        }
         res_json += ", \"uploadTime\": " + std::to_string(upload_time) + " }";
     }
     else if (role == "consumer")
     {
-        //sendto(socket_fd, "1", 1, MSG_CONFIRM, (const struct sockaddr *) &peeraddr, sizeof(peeraddr));
-        
+        struct sockaddr_in peeraddr;
+        int socket_fd = pair(peeraddr, pairing_key, server_ip);
         uint64_t finished_time = get_file(socket_fd, peeraddr);
         res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
     }
@@ -190,4 +202,12 @@ uint64_t send_file(int sock_fd,
     
     
     return bef_upload;
+}
+
+uint64_t send_file_multiple(int sock_fds[],
+                   struct sockaddr_in peeraddr[],
+                   int num_consumers,
+                   int size)
+{
+    return 0;
 }
