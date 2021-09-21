@@ -111,7 +111,7 @@ int main()
 uint64_t get_file(int sock_fd,
                   const struct sockaddr_in &peeraddr)
 {
-    char* recv_buffer = new char[1];
+    int size;
 
     UDT::startup();
     UDTSOCKET u_sock = UDT::socket(AF_INET, SOCK_STREAM, 0);
@@ -125,27 +125,28 @@ uint64_t get_file(int sock_fd,
         std::cout << "connect: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
     std::cout << "Succesfully connected" << std::endl;
-    if (UDT::ERROR == UDT::recv(u_sock, recv_buffer, 1, 0)) {
+    if (UDT::ERROR == UDT::recv(u_sock, (char*) (size_t) &size, sizeof(int), 0)) {
+        std::cout << "recv: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    }
+    std::cout << "Size is " << size << std::endl;
+    char* recv_buffer = new char[size];
+    if (UDT::ERROR == UDT::recv(u_sock, recv_buffer, size, 0)) {
         std::cout << "recv: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
 
 
-    std::cout << "Value: " << recv_buffer[0] << std::endl;
     UDT::close(u_sock);
     UDT::cleanup();
-    return 0;
+
+    delete[] recv_buffer;
+    return timeSinceEpochMillisec();
 }
 
 uint64_t send_file(int sock_fd,
                    const struct sockaddr_in &peeraddr,
                    int size)
-{
-    /*int tot_size = size + sizeof(int);
-    char* pBuf = new char[tot_size];
-    *((int*) pBuf) = size;*/
-    // TODO: First send size, then buffer
-    char* pBuf = new char[1]; 
-    pBuf[0] = '5';
+{      
+    char* pBuf = new char[size];
     
     
     UDT::startup();
@@ -160,13 +161,19 @@ uint64_t send_file(int sock_fd,
         std::cout << "connect: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
     std::cout << "Succesfully connected" << std::endl;
-    if (UDT::ERROR == UDT::send(u_sock, pBuf, 1, 0)) {
+    uint64_t bef_upload = timeSinceEpochMillisec();
+    if (UDT::ERROR == UDT::send(u_sock, (char*) (size_t) &size, sizeof(int), 0)) {
+        std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    }
+    if (UDT::ERROR == UDT::send(u_sock, pBuf, size, 0)) {
         std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
     
     UDT::close(u_sock);
     UDT::cleanup();
+
+    delete[] pBuf;
     
     
-    return 0;
+    return bef_upload;
 }
