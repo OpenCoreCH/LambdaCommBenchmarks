@@ -130,9 +130,17 @@ uint64_t get_file(int sock_fd,
     }
     std::cout << "Size is " << size << std::endl;
     char* recv_buffer = new char[size];
-    if (UDT::ERROR == UDT::recv(u_sock, recv_buffer, size, 0)) {
-        std::cout << "recv: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    int total_recv_bytes = 0;
+    while (total_recv_bytes < size) {
+        int recv_bytes = UDT::recv(u_sock, recv_buffer + total_recv_bytes, size - total_recv_bytes, 0);
+        if (recv_bytes == UDT::ERROR) {
+            std::cout << "recv: " << UDT::getlasterror().getErrorMessage() << std::endl;
+        } else {
+            std::cout << "Received " << recv_bytes << " bytes" << std::endl;
+        }
+        total_recv_bytes += recv_bytes;
     }
+
 
 
     UDT::close(u_sock);
@@ -165,9 +173,15 @@ uint64_t send_file(int sock_fd,
     if (UDT::ERROR == UDT::send(u_sock, (char*) (size_t) &size, sizeof(int), 0)) {
         std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
     }
-    if (UDT::ERROR == UDT::send(u_sock, pBuf, size, 0)) {
-        std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
+    int total_sent_bytes = 0;
+    while (total_sent_bytes < size) {
+        int sent_bytes = UDT::send(u_sock, pBuf + total_sent_bytes, size - total_sent_bytes, 0);
+        if (sent_bytes == UDT::ERROR) {
+            std::cout << "send: " << UDT::getlasterror().getErrorMessage() << std::endl;
+        }
+        total_sent_bytes += sent_bytes;
     }
+    
     
     UDT::close(u_sock);
     UDT::cleanup();
