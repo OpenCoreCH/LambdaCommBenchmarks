@@ -149,8 +149,6 @@ uint64_t get_file(int sock_fd,
         int recv_bytes = UDT::recv(u_sock, recv_buffer + total_recv_bytes, size - total_recv_bytes, 0);
         if (recv_bytes == UDT::ERROR) {
             std::cout << "recv: " << UDT::getlasterror().getErrorMessage() << std::endl;
-        } else {
-            std::cout << "Received " << recv_bytes << " bytes" << std::endl;
         }
         total_recv_bytes += recv_bytes;
     }
