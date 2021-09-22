@@ -12,7 +12,7 @@ aws ec2 describe-instances
 # Creating function
 aws lambda create-function \
 --function-name natbenchmark \
---role arn:aws:iam::690111777418:role/lambda-vpc-role \
+--role arn:aws:iam::386971375191:role/lambda-vpc-role \
 --runtime provided \
 --timeout 60 \
 --memory-size 2048 \
