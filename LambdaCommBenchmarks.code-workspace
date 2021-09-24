@@ -89,7 +89,28 @@
 			"*.tcc": "cpp",
 			"memory_resource": "cpp",
 			"stop_token": "cpp",
-			"cinttypes": "cpp"
+			"cinttypes": "cpp",
+			"any": "cpp",
+			"csetjmp": "cpp",
+			"csignal": "cpp",
+			"coroutine": "cpp",
+			"forward_list": "cpp",
+			"regex": "cpp",
+			"scoped_allocator": "cpp",
+			"shared_mutex": "cpp",
+			"span": "cpp",
+			"strstream": "cpp",
+			"typeindex": "cpp",
+			"unordered_set": "cpp",
+			"valarray": "cpp",
+			"variant": "cpp",
+			"*.ipp": "cpp",
+			"source_location": "cpp",
+			"hash_map": "cpp",
+			"hash_set": "cpp",
+			"rope": "cpp",
+			"slist": "cpp",
+			"cfenv": "cpp"
 		}
 	}
 }
