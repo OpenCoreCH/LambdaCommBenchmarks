@@ -6,9 +6,9 @@ aws iam attach-role-policy --role-name lambda-s3 --policy-arn arn:aws:iam::aws:p
 # Creating function
 aws lambda create-function \
 --function-name s3benchmark \
---role arn:aws:iam::690111777418:role/lambda-cpp-demo \
+--role arn:aws:iam::386971375191:role/lambda-s3 \
 --runtime provided \
---timeout 60 \
+--timeout 5 \
 --memory-size 2048 \
 --handler s3benchmark \
 --zip-file fileb://s3benchmark.zip

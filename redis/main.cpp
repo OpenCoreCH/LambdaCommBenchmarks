@@ -25,8 +25,9 @@ uint64_t download_file(redisContext* context,
 
 uint64_t timeSinceEpochMillisec()
 {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+  auto now = std::chrono::high_resolution_clock::now();
+  auto time = now.time_since_epoch();
+  return std::chrono::duration_cast< std::chrono::microseconds >(time).count();
 }
 
 

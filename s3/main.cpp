@@ -30,7 +30,8 @@ uint64_t upload_random_file(Aws::S3::S3Client const &client,
 
 uint64_t download_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
-                        Aws::String const &key);
+                        Aws::String const &key,
+                        int &required_retries);
 
 uint64_t timeSinceEpochMillisec()
 {
@@ -71,8 +72,9 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     }
     else if (role == "consumer")
     {
-        uint64_t finished_time = download_file(client, bucket, key);
-        res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
+        int retries;
+        uint64_t finished_time = download_file(client, bucket, key, retries);
+        res_json += ", \"finishedTime\": " + std::to_string(finished_time) + ", \"retries\":" + std::to_string(retries) + " }";
     }
     
     return invocation_response::success(res_json, "application/json");
@@ -112,7 +114,8 @@ int main()
 
 uint64_t download_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
-                        Aws::String const &key)
+                        Aws::String const &key,
+                        int &required_retries)
 {
     
 
@@ -131,6 +134,7 @@ uint64_t download_file(Aws::S3::S3Client const &client,
             ss << s.rdbuf();
             std::string first(" ");
             ss.get(&first[0], 1);
+            required_retries = retries;
             return finishedTime;
         } else {
             retries += 1;
