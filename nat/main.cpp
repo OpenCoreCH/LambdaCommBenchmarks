@@ -10,7 +10,7 @@
 #include <thread>
 #include <cstdint>
 #include <iostream>
-#include <hole_punching_client.h>
+#include <tcpunch.h>
 #include <fcntl.h>
 
 using namespace aws::lambda_runtime;
