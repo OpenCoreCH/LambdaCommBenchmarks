@@ -13,4 +13,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
                     AWS::aws-lambda-runtime
                     SMI)
 
-aws_lambda_package_target(${PROJECT_NAME})
+#aws_lambda_package_target(${PROJECT_NAME})
+
+add_executable(smi_benchmark smi_benchmark.cpp)
+target_include_directories(smi_benchmark PRIVATE ${SMI_INCLUDE_DIRS})
+target_link_libraries(smi_benchmark PUBLIC SMI)
