@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < 1001; i++) {
         unsigned long bef, after;
+        MPI_Barrier(MPI_COMM_WORLD);
         if (strcmp(argv[1], "bcast") == 0) {
             bef = get_time_in_microseconds();
             bcast_benchmark(world_rank + 1);
@@ -95,7 +96,7 @@ int main(int argc, char** argv) {
         }
 
         if (i > 0)
-            printf("%lu\n", after - bef);
+            printf("%d:%lu\n", world_rank, after - bef);
     }
     
 

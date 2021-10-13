@@ -2,6 +2,7 @@
 #include <sys/time.h>
 #include <Communicator.h>
 
+
 unsigned long get_time_in_microseconds() {
     struct timeval tv;
     gettimeofday(&tv,NULL);
@@ -45,11 +46,11 @@ int main(int argc, char** argv) {
     int peer_id = std::stoi(argv[3]);
 
     SMI::Communicator comm(peer_id, num_peers, "smi.json", "SMITest", 512);
-    comm.barrier();
     
 
     for (int i = 0; i < 1001; i++) {
         unsigned long bef, after;
+        comm.barrier();
         if (benchmark == "bcast") {
             SMI::Comm::Data<int> data = peer_id + 1;
             bef = get_time_in_microseconds();
