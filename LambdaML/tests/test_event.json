@@ -1,0 +1,15 @@
+{
+  "dataset": "higgs",
+  "data_bucket": "romanboe-lambdaml-data",
+  "dataset_type": "dense_libsvm",
+  "n_features": 28,
+  "tmp_bucket": "romanboe-lambdaml-tmp",
+  "merged_bucket": "romanboe-lambdaml-merged",
+  "n_clusters": 3,
+  "n_epochs": 1,
+  "threshold": 0.0001,
+  "sync_mode": "reduce",
+  "n_workers": 1,
+  "worker_index": 0,
+  "file": "0_2"
+}

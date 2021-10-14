@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Resources:
+  lambdaml:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: lambdaml
+      MemorySize: 512
+      Handler: examples.lambda.s3.kmeans_s3.handler
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-vpc-role'
+      Timeout: 10
+      Runtime: python3.6
+      Layers:
+        - arn:aws:lambda:eu-central-1:934676248949:layer:pytorchv1-py36:2
+        - arn:aws:lambda:eu-central-1:292169987271:layer:AWSLambda-Python36-SciPy1x:35
+        - Ref: lambdaMLDeps
+    Metadata:
+      BuildMethod: makefile
+
+  lambdaMLDeps:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: lambdaMLDeps
+      ContentUri: .
+      CompatibleRuntimes:
+        - python3.6
+    Metadata:
+      BuildMethod: makefile
