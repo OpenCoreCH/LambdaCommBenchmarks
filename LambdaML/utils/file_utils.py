@@ -100,9 +100,7 @@ def split_file_with_info2(src_file, dst_path, num_files):
 
 
 if __name__ == "__main__":
-    num_file = 50
-    #src_file = "../dataset/agaricus_127d_train.libsvm"
-    #dst_dir = "../dataset/HIGGS-{}".format(num_file)
-    #split_file_with_info(src_file, dst_dir, num_file)
-    split_file_with_index("YFCC100M_hybridCNN_gmean_fc6_0_tag", "splits/", 0, 100)
-
+    num_file = 16
+    src_file = "/Volumes/Daten/Datasets/higgs/HIGGS1G"
+    dst_dir = "/Volumes/Daten/Datasets/higgs/HIGGS1G-{}".format(num_file)
+    split_file_with_info(src_file, dst_dir, num_file)
