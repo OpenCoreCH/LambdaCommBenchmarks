@@ -1,3 +1,9 @@
+# this import statement is needed if you want to use the AWS Lambda Layer called "pytorch-v1-py36"
+# it unzips all of the pytorch & dependency packages when the script is loaded to avoid the 250 MB unpacked limit in AWS Lambda
+try:
+    import unzip_requirements
+except ImportError:
+    pass
 import urllib.parse
 import numpy as np
 import time
@@ -139,6 +145,11 @@ def handler(event, context):
 
     model = cluster_models.get_model(dataset, centroids, dataset_type, n_features, n_clusters)
 
+    result = {
+        "comm_times": [],
+        "calc_times": []
+    }
+
     train_start = time.time()
     for epoch in range(n_epochs):
         epoch_start = time.time()
@@ -147,7 +158,7 @@ def handler(event, context):
         model.find_nearest_cluster()
 
         local_cent = model.get_centroids("numpy").reshape(-1)
-        local_cent_error = np.concatenate((local_cent.flatten(), np.array([model.error], dtype=np.float32)))
+        local_cent_error = np.concatenate((local_cent.flatten(), np.array([model.error], dtype=np.double)))
         epoch_cal_time = time.time() - epoch_start
 
         # sync local centroids and error
@@ -167,6 +178,8 @@ def handler(event, context):
 
         print("one {} round cost {} s".format(sync_mode, epoch_comm_time))
 
+        result["comm_times"].append(epoch_comm_time)
+        result["calc_times"].append(epoch_cal_time)
         print("Epoch[{}] Worker[{}], error = {}, cost {} s, cal cost {} s, sync cost {} s"
               .format(epoch, worker_index, model.error,
                       time.time() - epoch_start, epoch_cal_time, epoch_comm_time))
@@ -174,10 +187,10 @@ def handler(event, context):
         if model.error < threshold:
             break
 
-    if worker_index == 0:
-        tmp_table.clear(key_col)
-        merged_table.clear(key_col)
+    #if worker_index == 0:
+        #tmp_table.clear(key_col)
+        #merged_table.clear(key_col)
 
     print("Worker[{}] finishes training: Error = {}, cost {} s"
           .format(worker_index, model.error, time.time() - train_start))
-    return
+    return result

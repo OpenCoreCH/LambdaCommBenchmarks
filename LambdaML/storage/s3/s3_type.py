@@ -14,7 +14,7 @@ class S3Storage(BaseStorage):
     def load(self, object_name, bucket_name=""):
         return s3_operator.get_object(self.client, bucket_name, object_name)
 
-    def load_or_wait(self, object_name, bucket_name="", sleep_time=0.1, time_out=60):
+    def load_or_wait(self, object_name, bucket_name="", sleep_time=0.1, time_out=10):
         return s3_operator.get_object_or_wait(self.client, bucket_name, object_name, sleep_time, time_out)
 
     def delete(self, key, bucket_name=""):

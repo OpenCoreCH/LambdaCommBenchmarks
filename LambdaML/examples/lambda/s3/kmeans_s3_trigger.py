@@ -6,7 +6,7 @@ from storage.s3 import s3_operator
 
 def handler(event, context):
 
-    function_name = "kmeans_s3"
+    function_name = "lambdaml"
 
     # dataset setting
     dataset_name = 'higgs'

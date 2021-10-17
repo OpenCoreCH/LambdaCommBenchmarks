@@ -11,9 +11,9 @@ def handler(event, context):
 
     # dataset setting
     dataset_name = 'higgs'
-    data_bucket = "higgs-10"
+    data_bucket = "romanboe-lambdaml-data"
     dataset_type = "dense_libsvm"
-    n_features = 30
+    n_features = 28
     tmp_table_name = "tmp-params"
     merged_table_name = "merged-params"
     key_col = "key"

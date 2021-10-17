@@ -88,7 +88,7 @@ class DenseDatasetWithFile(Dataset):
             tup = item.split(":")
            
             values[int(tup[0])] = float(tup[1])
-        vector = torch.tensor(values, dtype=torch.float32)
+        vector = torch.tensor(values, dtype=torch.double)
         return vector, label
 
     def __getitem__(self, index):
@@ -130,7 +130,7 @@ class DenseDatasetWithLines(Dataset):
                     values[int(tup[0])-1] = float(tup[1])
                 else:
                     return None
-            vector = torch.tensor(values, dtype=torch.float32)
+            vector = torch.tensor(values, dtype=torch.double)
             return vector, label
         else:
             print("split line error: {}".format(line))
