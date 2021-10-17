@@ -6,10 +6,10 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: lambdaml
-      MemorySize: 512
-      Handler: examples.lambda.s3.kmeans_s3.handler
+      MemorySize: 1024
+      Handler: examples.lambda.smibench.kmeans_smi.handler
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-vpc-role'
-      Timeout: 10
+      Timeout: 40
       Runtime: python3.6
       Layers:
         - arn:aws:lambda:eu-central-1:934676248949:layer:pytorchv1-py36:2

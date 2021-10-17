@@ -9,3 +9,4 @@ build-lambdaml:
 
 build-lambdaMLDeps:
 	pip install redis -t "$(ARTIFACTS_DIR)/python"
+	cp -r extern/SMI/* "$(ARTIFACTS_DIR)/python/"
