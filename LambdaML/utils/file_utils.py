@@ -122,7 +122,7 @@ def split_file_with_info2(src_file, dst_path, num_files):
 
 
 if __name__ == "__main__":
-    num_file = 128
+    num_file = 256
     num_line = 1500
     src_file = "/Volumes/Daten/Datasets/higgs/HIGGS1G"
     dst_dir = "/Volumes/Daten/Datasets/higgs/HIGGS1M"
