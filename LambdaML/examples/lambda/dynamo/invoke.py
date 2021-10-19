@@ -1,10 +1,12 @@
 import boto3
+import botocore
 import json
-import time
+import os
 from concurrent.futures import ThreadPoolExecutor
 
-lambda_ = boto3.client('lambda')
-n_workers = 2
+cfg = botocore.config.Config(retries={'max_attempts': 0}, read_timeout=180, connect_timeout=180)
+lambda_ = boto3.client('lambda', config=cfg)
+n_workers = 64
 
 def invoke_lambda(index):
     print("Invoking {}".format(index))
@@ -22,7 +24,7 @@ def invoke_lambda(index):
         "sync_mode": "reduce",
         "n_workers": n_workers,
         "worker_index": index,
-        "file": "{}_{}".format(index, n_workers)
+        "file": "{}".format(index)
     }
 
     response = lambda_.invoke(
@@ -37,6 +39,13 @@ def invoke_lambda(index):
     return res_payload
 
 
+if not os.path.exists("out"):
+    os.makedirs("out")
+
 with ThreadPoolExecutor(max_workers=n_workers) as executor:
     result = list(executor.map(invoke_lambda, range(n_workers)))
-    print(result)
+    for i, res in enumerate(result):
+        res_text = res.decode("utf-8")
+        print(res_text)
+        with open("out/{}_{}.json".format(n_workers, i), "w") as txt:
+            txt.write(res_text)

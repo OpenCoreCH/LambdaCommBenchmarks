@@ -34,6 +34,28 @@ def split_file_with_info(src_path, dst_path, num_files):
     for file in dst_file:
         file.close()
 
+def uniform_line_split(src_path, dst_path, num_files, num_lines):
+    line_number = 0
+
+    src_file = open(src_path, "r")
+    print("Splitting {} into {} files".format(src_path, num_files))
+
+    dst_file = []
+    for i in np.arange(num_files):
+        file_name = "{}".format(i, num_files)
+        dst_file_name = os.path.join(dst_path, file_name)
+        dst_file.append(create_file(dst_file_name))
+
+    for line in src_file:
+        file_index = line_number % num_files
+        dst_file[file_index].write(line)
+        line_number += 1
+        if line_number >= num_files * num_lines:
+            break
+
+    for file in dst_file:
+        file.close()
+
 
 def split_file_with_index(src_path, dst_path, start, end):
     line_number = 0
@@ -100,7 +122,9 @@ def split_file_with_info2(src_file, dst_path, num_files):
 
 
 if __name__ == "__main__":
-    num_file = 16
+    num_file = 128
+    num_line = 1500
     src_file = "/Volumes/Daten/Datasets/higgs/HIGGS1G"
-    dst_dir = "/Volumes/Daten/Datasets/higgs/HIGGS1G-{}".format(num_file)
-    split_file_with_info(src_file, dst_dir, num_file)
+    dst_dir = "/Volumes/Daten/Datasets/higgs/HIGGS1M"
+    #split_file_with_info(src_file, dst_dir, num_file)
+    uniform_line_split(src_file, dst_dir, num_file, num_line)
