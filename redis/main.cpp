@@ -21,7 +21,8 @@ uint64_t upload_random_file(redisContext* context,
                         int size);
 
 uint64_t download_file(redisContext* context,
-                       std::string const &key);
+                       std::string const &key,
+                       bool report_dl_time);
 
 uint64_t timeSinceEpochMillisec()
 {
@@ -47,12 +48,16 @@ static invocation_response my_handler(invocation_request const &req)
     auto redis_port = v.GetInteger("port");
     auto role = v.GetString("role"); // producer or consumer
     auto file_size = v.GetInteger("fileSize");
+    bool report_dl_time = false;
     if (v.KeyExists("waitUntil")) {
         auto wait_until = v.GetInteger("waitUntil");
         while (std::time(0) < wait_until) {
             
         }
 
+    }
+    if (v.KeyExists("downloadTime")) {
+        report_dl_time = true;
     }
     std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
     redisContext *c = redisConnect(redis_hostname.c_str(), redis_port);
@@ -68,13 +73,13 @@ static invocation_response my_handler(invocation_request const &req)
     std::string res_json = "{ \"fileSize\": " + std::to_string(file_size) + ", \"role\": \"" + role + "\"" ;
     if (role == "producer")
     {
-        redisCommand(c, "FLUSHALL");
+        //redisCommand(c, "FLUSHALL");
         uint64_t upload_time = upload_random_file(c, key, file_size);
         res_json += ", \"uploadTime\": " + std::to_string(upload_time) + " }";
     }
     else if (role == "consumer")
     {
-        uint64_t finished_time = download_file(c, key);
+        uint64_t finished_time = download_file(c, key, report_dl_time);
         res_json += ", \"finishedTime\": " + std::to_string(finished_time) + " }";
     }
     
@@ -110,10 +115,12 @@ int main()
 }
 
 uint64_t download_file(redisContext* context,
-                       std::string const &key)
+                       std::string const &key,
+                       bool report_dl_time)
 {
     int retries = 0;
     const int MAX_RETRIES = 50000;
+    auto bef = timeSinceEpochMillisec();
     while (retries < MAX_RETRIES) {
         std::string comm = "GET " + key;
         redisReply* reply = (redisReply*) redisCommand(context, comm.c_str());
@@ -127,7 +134,12 @@ uint64_t download_file(redisContext* context,
                 std::string res = reply->element[i]->str;
             }
             freeReplyObject(reply);
-            return finishedTime;
+            if (report_dl_time) {
+                return finishedTime - bef;
+            } else {
+                return finishedTime;
+            }
+            
         }
     }
     return 0;
