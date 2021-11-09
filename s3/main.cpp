@@ -31,12 +31,14 @@ uint64_t upload_random_file(Aws::S3::S3Client const &client,
 uint64_t download_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
                         Aws::String const &key,
-                        int &required_retries);
+                        int &required_retries,
+                        bool report_dl_time);
 
 uint64_t timeSinceEpochMillisec()
 {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+  auto now = std::chrono::high_resolution_clock::now();
+  auto time = now.time_since_epoch();
+  return std::chrono::duration_cast< std::chrono::microseconds >(time).count();
 }
 
 
@@ -55,12 +57,16 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     auto key = v.GetString("s3key");
     auto role = v.GetString("role"); // producer or consumer
     auto file_size = v.GetInteger("fileSize");
+    bool report_dl_time = false;
     if (v.KeyExists("waitUntil")) {
         auto wait_until = v.GetInteger("waitUntil");
         while (std::time(0) < wait_until) {
             
         }
 
+    }
+    if (v.KeyExists("downloadTime")) {
+        report_dl_time = true;
     }
     std::cout << "Invoked handler for role " << role << " with file size " << file_size << std::endl;
 
@@ -73,7 +79,7 @@ static invocation_response my_handler(invocation_request const &req, Aws::S3::S3
     else if (role == "consumer")
     {
         int retries;
-        uint64_t finished_time = download_file(client, bucket, key, retries);
+        uint64_t finished_time = download_file(client, bucket, key, retries, report_dl_time);
         res_json += ", \"finishedTime\": " + std::to_string(finished_time) + ", \"retries\":" + std::to_string(retries) + " }";
     }
     
@@ -115,12 +121,14 @@ int main()
 uint64_t download_file(Aws::S3::S3Client const &client,
                         Aws::String const &bucket,
                         Aws::String const &key,
-                        int &required_retries)
+                        int &required_retries,
+                        bool report_dl_time)
 {
     
 
     Aws::S3::Model::GetObjectRequest request;
     request.WithBucket(bucket).WithKey(key);
+    auto bef = timeSinceEpochMillisec();
 
     int retries = 0;
     const int MAX_RETRIES = 500;
@@ -135,7 +143,11 @@ uint64_t download_file(Aws::S3::S3Client const &client,
             std::string first(" ");
             ss.get(&first[0], 1);
             required_retries = retries;
-            return finishedTime;
+            if (report_dl_time) {
+                return finishedTime - bef;
+            } else {
+                return finishedTime;
+            }
         } else {
             retries += 1;
             int sleep_time = retries;
