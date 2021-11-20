@@ -7,7 +7,6 @@
 unsigned long get_time_in_microseconds() {
     struct timeval tv;
     gettimeofday(&tv,NULL);
-    return tv.tv_usec;
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 

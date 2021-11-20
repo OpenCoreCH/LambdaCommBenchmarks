@@ -1,12 +1,12 @@
 #include <iostream>
 #include <sys/time.h>
 #include <Communicator.h>
+#include <cstdlib>
 
 
 unsigned long get_time_in_microseconds() {
     struct timeval tv;
     gettimeofday(&tv,NULL);
-    return tv.tv_usec;
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
@@ -42,8 +42,8 @@ void scan_benchmark(SMI::Comm::Data<int>& data, SMI::Communicator& comm) {
 
 int main(int argc, char** argv) {
     std::string benchmark(argv[1]);
-    int num_peers = std::stoi(argv[2]);
-    int peer_id = std::stoi(argv[3]);
+    int num_peers = std::stoi(std::getenv("OMPI_COMM_WORLD_SIZE"));
+    int peer_id = std::stoi(std::getenv("OMPI_COMM_WORLD_RANK"));
 
     SMI::Communicator comm(peer_id, num_peers, "smi.json", "SMITest", 512);
     
