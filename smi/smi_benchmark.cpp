@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
             after = get_time_in_microseconds();
         }
         if (i > 0)
-            std::cout << after - bef << std::endl;
+            std::cout << peer_id << ":" << after - bef << std::endl;
         
     }
 }
