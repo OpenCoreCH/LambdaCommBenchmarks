@@ -17,13 +17,41 @@
 using namespace aws::lambda_runtime;
 char const TAG[] = "LAMBDA_ALLOC";
 
-uint64_t timeSinceEpochMicrosec()
-{
-  auto now = std::chrono::high_resolution_clock::now();
-  auto time = now.time_since_epoch();
-  return std::chrono::duration_cast< std::chrono::microseconds >(time).count();
+unsigned long get_time_in_microseconds() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
+void bcast_benchmark(SMI::Comm::Data<int>& data, SMI::Communicator& comm) {
+    comm.bcast(data, 0);
+}
+
+void gather_benchmark(SMI::Comm::Data<std::vector<int>>& sendbuf, SMI::Comm::Data<std::vector<int>>& recvbuf, SMI::Communicator& comm) {
+    comm.gather(sendbuf, recvbuf, 0);
+}
+
+void scatter_benchmark(SMI::Comm::Data<std::vector<int>>& sendbuf, SMI::Comm::Data<std::vector<int>>& recvbuf, SMI::Communicator& comm) {
+    comm.scatter(sendbuf, recvbuf, 0);
+}
+
+void reduce_benchmark(SMI::Comm::Data<int>& data, SMI::Communicator& comm) {
+    SMI::Comm::Data<int> res;
+    SMI::Utils::Function<int> f([] (auto a, auto b) {return a + b;}, true, true);
+    comm.reduce(data, res, 0, f);
+}
+
+void allreduce_benchmark(SMI::Comm::Data<int>& data, SMI::Communicator& comm) {
+    SMI::Comm::Data<int> res;
+    SMI::Utils::Function<int> f([] (auto a, auto b) {return a + b;}, true, true);
+    comm.allreduce(data, res, f);
+}
+
+void scan_benchmark(SMI::Comm::Data<int>& data, SMI::Communicator& comm) {
+    SMI::Comm::Data<int> res;
+    SMI::Utils::Function<int> f([] (auto a, auto b) {return a + b;}, true, true);
+    comm.scan(data, res, f);
+}
 
 static invocation_response my_handler(invocation_request const &req)
 {
@@ -38,22 +66,60 @@ static invocation_response my_handler(invocation_request const &req)
 
     int num_peers = v.GetInteger("numPeers");
     int peer_id = v.GetInteger("peerID");
+    std::string benchmark = v.GetString("benchmark");
+    std::string timestamp = v.GetString("timestamp");
 
-    SMI::Communicator comm(peer_id, num_peers, "smi.json", "SMITest", 512);
+    SMI::Communicator comm(peer_id, num_peers, "smi.json", timestamp, 512);
 
-    SMI::Comm::Data<int> data = peer_id + 1;
-    SMI::Comm::Data<int> res;
 
-    SMI::Utils::Function<int> f([] (auto a, auto b) {return a + b;}, true, true);
+    std::string res;
 
-    std::string res_json = "{ \"peerID\": " + std::to_string(peer_id) + ", \"numPeers\": \"" + std::to_string(num_peers) + "\"" ;
-
-    auto bef = timeSinceEpochMicrosec();
-    comm.reduce(data, res, 0, f);
-    auto after = timeSinceEpochMicrosec();
-    res_json += ", \"time\": " + std::to_string(after - bef) + " }";
+    for (int i = 0; i < 101; i++) {
+        unsigned long bef, after;
+        comm.barrier();
+        if (benchmark == "bcast") {
+            SMI::Comm::Data<int> data = peer_id + 1;
+            bef = get_time_in_microseconds();
+            bcast_benchmark(data, comm);
+            after = get_time_in_microseconds();
+        } else if (benchmark == "gather") {
+            long recv_size = 4992;
+            long individual_size = recv_size / num_peers;
+            SMI::Comm::Data<std::vector<int>> recv(recv_size);
+            SMI::Comm::Data<std::vector<int>> send(individual_size);
+            bef = get_time_in_microseconds();
+            gather_benchmark(send, recv, comm);
+            after = get_time_in_microseconds();
+        } else if (benchmark == "scatter") {
+            long send_size = 4992;
+            long individual_size = send_size / num_peers;
+            SMI::Comm::Data<std::vector<int>> recv(individual_size);
+            SMI::Comm::Data<std::vector<int>> send(send_size);
+            bef = get_time_in_microseconds();
+            scatter_benchmark(send, recv, comm);
+            after = get_time_in_microseconds();
+        } else if (benchmark == "reduce") {
+            SMI::Comm::Data<int> data = peer_id + 1;
+            bef = get_time_in_microseconds();
+            reduce_benchmark(data, comm);
+            after = get_time_in_microseconds();
+        } else if (benchmark == "allreduce") {
+            SMI::Comm::Data<int> data = peer_id + 1;
+            bef = get_time_in_microseconds();
+            allreduce_benchmark(data, comm);
+            after = get_time_in_microseconds();
+        } else if (benchmark == "scan") {
+            SMI::Comm::Data<int> data = peer_id + 1;
+            bef = get_time_in_microseconds();
+            scan_benchmark(data, comm);
+            after = get_time_in_microseconds();
+        }
+        if (i > 0)
+            res.append(std::to_string(after - bef) + '\n');
+        
+    }
     
-    return invocation_response::success(res_json, "application/json");
+    return invocation_response::success(res, "application/txt");
 }
 
 std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory()

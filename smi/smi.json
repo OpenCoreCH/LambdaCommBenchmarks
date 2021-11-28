@@ -16,9 +16,9 @@
     },
     "Direct": {
       "enabled": true,
-      "host": "54.93.252.43",
+      "host": "18.197.155.232",
       "port": 10000,
-      "max_timeout": 1000
+      "max_timeout": 5000
     }
   },
   "model": {
