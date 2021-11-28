@@ -74,7 +74,7 @@ static invocation_response my_handler(invocation_request const &req)
 
     std::string res;
 
-    for (int i = 0; i < 101; i++) {
+    for (int i = 0; i < 10; i++) {
         unsigned long bef, after;
         comm.barrier();
         if (benchmark == "bcast") {
@@ -114,8 +114,7 @@ static invocation_response my_handler(invocation_request const &req)
             scan_benchmark(data, comm);
             after = get_time_in_microseconds();
         }
-        if (i > 0)
-            res.append(std::to_string(after - bef) + '\n');
+        res.append(std::to_string(after - bef) + '\n');
         
     }
     

@@ -8,14 +8,14 @@
       "max_timeout": 1000
     },
     "Redis": {
-      "enabled": false,
-      "host": "127.0.0.1",
+      "enabled": true,
+      "host": "test.cwp3i4.ng.0001.euc1.cache.amazonaws.com",
       "port": 6379,
       "timeout": 1,
-      "max_timeout": 1000
+      "max_timeout": 5000
     },
     "Direct": {
-      "enabled": true,
+      "enabled": false,
       "host": "18.197.155.232",
       "port": 10000,
       "max_timeout": 5000

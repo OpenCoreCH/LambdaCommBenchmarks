@@ -3,7 +3,7 @@ mkdir -p out/
 
 peers=2
 
-#benchmarks=(bcast gather scatter reduce allreduce scan)
+benchmarks=(bcast gather scatter reduce allreduce scan)
 benchmarks=(scan)
 exp_peers=(32)
 for peers in "${exp_peers[@]}"
