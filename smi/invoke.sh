@@ -4,8 +4,7 @@ mkdir -p out/
 peers=2
 
 benchmarks=(bcast gather scatter reduce allreduce scan)
-benchmarks=(scan)
-exp_peers=(32)
+exp_peers=(2 4 8 16 32)
 for peers in "${exp_peers[@]}"
 do
     for benchmark in "${benchmarks[@]}"
@@ -16,6 +15,6 @@ do
             peer_id=$(($peernum - 1))
             aws lambda invoke --function-name smibenchmark --cli-binary-format raw-in-base64-out --payload '{"timestamp": "'$timestamp'", "numPeers": '"$peers"', "peerID":'"$peer_id"', "benchmark":"'$benchmark'" }' "out/${benchmark}_${peers}_$peer_id.json" &
             done
-        sleep 5
+        sleep 10
     done
 done
