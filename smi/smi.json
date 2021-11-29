@@ -1,7 +1,7 @@
 {
   "backends": {
     "S3": {
-      "enabled": true,
+      "enabled": false,
       "bucket_name": "romanboe-collectives",
       "s3_region": "eu-central-1",
       "timeout": 20,
@@ -15,8 +15,8 @@
       "max_timeout": 5000
     },
     "Direct": {
-      "enabled": false,
-      "host": "18.197.155.232",
+      "enabled": true,
+      "host": "3.127.255.96",
       "port": 10000,
       "max_timeout": 5000
     }

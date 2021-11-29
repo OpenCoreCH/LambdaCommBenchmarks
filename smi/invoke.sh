@@ -1,10 +1,8 @@
 #!/bin/bash
 mkdir -p out/
 
-peers=2
-
 benchmarks=(bcast gather scatter reduce allreduce scan)
-exp_peers=(2 4 8 16 32)
+exp_peers=(32)
 for peers in "${exp_peers[@]}"
 do
     for benchmark in "${benchmarks[@]}"
