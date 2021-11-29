@@ -120,6 +120,8 @@ static invocation_response my_handler(invocation_request const &req)
             res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(after) + '\n');
         }
         
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        
         
     }
     
