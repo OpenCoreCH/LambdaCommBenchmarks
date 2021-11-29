@@ -114,7 +114,12 @@ static invocation_response my_handler(invocation_request const &req)
             scan_benchmark(data, comm);
             after = get_time_in_microseconds();
         }
-        res.append(std::to_string(after - bef) + '\n');
+        if (peer_id == 0) {
+            res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(bef) + '\n');
+        } else {
+            res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(after) + '\n');
+        }
+        
         
     }
     
