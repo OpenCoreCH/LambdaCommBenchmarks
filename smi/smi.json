@@ -1,14 +1,14 @@
 {
   "backends": {
     "S3": {
-      "enabled": true,
+      "enabled": false,
       "bucket_name": "romanboe-collectives",
       "s3_region": "eu-central-1",
       "timeout": 20,
       "max_timeout": 1000
     },
     "Redis": {
-      "enabled": false,
+      "enabled": true,
       "host": "benchmark.cwp3i4.ng.0001.euc1.cache.amazonaws.com",
       "port": 6379,
       "timeout": 1,
@@ -16,7 +16,7 @@
     },
     "Direct": {
       "enabled": false,
-      "host": "3.127.255.96",
+      "host": "35.158.164.19",
       "port": 10000,
       "max_timeout": 5000
     }

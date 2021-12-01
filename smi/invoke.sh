@@ -1,8 +1,8 @@
 #!/bin/bash
 mkdir -p out/
 
-benchmarks=(reduce)
-exp_peers=(32)
+benchmarks=(gather)
+exp_peers=(4)
 for peers in "${exp_peers[@]}"
 do
     for benchmark in "${benchmarks[@]}"
