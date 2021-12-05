@@ -74,7 +74,7 @@ static invocation_response my_handler(invocation_request const &req)
 
     std::string res;
 
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 10; i++) {
         unsigned long bef, after;
         comm.barrier();
         if (benchmark == "bcast") {
@@ -128,7 +128,7 @@ static invocation_response my_handler(invocation_request const &req)
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
         
         
     }
