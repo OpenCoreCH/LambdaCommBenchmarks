@@ -74,7 +74,7 @@ static invocation_response my_handler(invocation_request const &req)
 
     std::string res;
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 30; i++) {
         unsigned long bef, after;
         comm.barrier();
         if (benchmark == "bcast") {
@@ -115,12 +115,20 @@ static invocation_response my_handler(invocation_request const &req)
             after = get_time_in_microseconds();
         }
         if (peer_id == 0) {
-            res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(bef) + '\n');
+            if (benchmark == "gather") {
+                res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(after) + '\n');
+            } else {
+                res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(bef) + '\n');
+            }
         } else {
-            res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(after) + '\n');
+            if (benchmark == "gather") {
+                res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(bef) + '\n');
+            } else {
+                res.append(std::to_string(peer_id) + "," + std::to_string(i) + "," + std::to_string(after) + '\n');
+            }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         
         
     }
