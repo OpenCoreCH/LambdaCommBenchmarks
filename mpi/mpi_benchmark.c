@@ -94,8 +94,21 @@ int main(int argc, char** argv) {
             after = get_time_in_microseconds();
         }
 
-        if (i > 0)
-            printf("%d:%lu\n", world_rank, after - bef);
+        if (i > 0) {
+            if (world_rank == 0) {
+                if (strcmp(argv[1], "gather") == 0) {
+                    printf("%d,%d,%lu\n", world_rank, i, after);
+                } else {
+                    printf("%d,%d,%lu\n", world_rank, i, bef);
+                }
+            } else {
+                if (strcmp(argv[1], "gather") == 0) {
+                    printf("%d,%d,%lu\n", world_rank, i, bef);
+                } else {
+                    printf("%d,%d,%lu\n", world_rank, i, after);
+                }
+            }
+        }
     }
     
 

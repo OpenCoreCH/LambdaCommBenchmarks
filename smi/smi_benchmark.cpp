@@ -88,8 +88,21 @@ int main(int argc, char** argv) {
             scan_benchmark(data, comm);
             after = get_time_in_microseconds();
         }
-        if (i > 0)
-            std::cout << peer_id << ":" << after - bef << std::endl;
+        if (i > 0) {
+            if (peer_id == 0) {
+                if (benchmark == "gather") {
+                    std::cout << peer_id << "," << i << "," << after << std::endl;
+                } else {
+                    std::cout << peer_id << "," << i << "," << bef << std::endl;
+                }
+            } else {
+                if (benchmark == "gather") {
+                    std::cout << peer_id << "," << i << "," << bef << std::endl;
+                } else {
+                    std::cout << peer_id << "," << i << "," << after << std::endl;
+                }
+            }
+        }
         
     }
 }
