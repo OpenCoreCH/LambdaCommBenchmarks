@@ -74,7 +74,7 @@ static invocation_response my_handler(invocation_request const &req)
 
     std::string res;
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 30; i++) {
         unsigned long bef, after;
         comm.barrier();
         if (benchmark == "bcast") {
