@@ -12,13 +12,13 @@
       "host": "bmark.cwp3i4.ng.0001.euc1.cache.amazonaws.com",
       "port": 6379,
       "timeout": 1,
-      "max_timeout": 5000
+      "max_timeout": 20000
     },
     "Direct": {
       "enabled": false,
-      "host": "3.121.195.88",
+      "host": "35.158.227.240",
       "port": 10000,
-      "max_timeout": 5000
+      "max_timeout": 15000
     }
   },
   "model": {
