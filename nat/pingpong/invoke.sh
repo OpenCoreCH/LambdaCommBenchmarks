@@ -4,7 +4,7 @@ mkdir -p out/
 SERVER_IP=18.197.228.217
 
 #filesizes=(1 1000 10000 100000 1000000 10000000 100000000)
-filesize=10000000
+filesize=100000000
 
 #s3key=$timestamp
 timestamp=$(date +%s)
